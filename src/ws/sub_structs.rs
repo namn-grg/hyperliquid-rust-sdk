@@ -284,15 +284,14 @@ pub struct WebData2Data {
 #[serde(rename_all = "camelCase")]
 pub struct ActiveAssetCtxData {
     pub coin: String,
-    pub ctx: AssetCtx,
+    pub ctx: PerpsAssetCtx,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
-#[serde(untagged)]
-pub enum AssetCtx {
-    Perps(PerpsAssetCtx),
-    Spot(SpotAssetCtx),
+pub struct ActiveSpotAssetCtxData {
+    pub coin: String,
+    pub ctx: SpotAssetCtx,
 }
 
 #[derive(Deserialize, Clone, Debug)]

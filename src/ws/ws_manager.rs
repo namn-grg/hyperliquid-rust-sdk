@@ -1,8 +1,8 @@
 use crate::{
     prelude::*,
     ws::message_types::{AllMids, Candle, L2Book, OrderUpdates, Trades, User},
-    ActiveAssetCtx, Error, Notification, UserFills, UserFundings, UserNonFundingLedgerUpdates,
-    WebData2,
+    ActiveAssetCtx, ActiveSpotAssetCtx, Error, Notification, UserFills, UserFundings,
+    UserNonFundingLedgerUpdates, WebData2,
 };
 use futures_util::{stream::SplitSink, SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -62,6 +62,7 @@ pub enum Subscription {
     UserFundings { user: H160 },
     UserNonFundingLedgerUpdates { user: H160 },
     ActiveAssetCtx { coin: String },
+    ActiveSpotAssetCtx { coin: String },
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -83,6 +84,7 @@ pub enum Message {
     Notification(Notification),
     WebData2(WebData2),
     ActiveAssetCtx(ActiveAssetCtx),
+    ActiveSpotAssetCtx(ActiveSpotAssetCtx),
     Pong,
 }
 
@@ -267,6 +269,12 @@ impl WsManager {
                 })
                 .map_err(|e| Error::JsonParse(e.to_string()))
             }
+            Message::ActiveSpotAssetCtx(active_spot_asset_ctx) => {
+                serde_json::to_string(&Subscription::ActiveSpotAssetCtx {
+                    coin: active_spot_asset_ctx.data.coin.clone(),
+                })
+                .map_err(|e| Error::JsonParse(e.to_string()))
+            }
             Message::SubscriptionResponse | Message::Pong => Ok(String::default()),
             Message::NoData => Ok("".to_string()),
             Message::HyperliquidError(err) => Ok(format!("hyperliquid error: {err:?}")),
@@ -285,6 +293,7 @@ impl WsManager {
                     }
                     let message = serde_json::from_str::<Message>(&data)
                         .map_err(|e| Error::JsonParse(e.to_string()))?;
+                    info!("Received message: {:?}", message);
                     let identifier = WsManager::get_identifier(&message)?;
                     if identifier.is_empty() {
                         return Ok(());
